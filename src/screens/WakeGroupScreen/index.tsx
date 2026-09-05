@@ -55,6 +55,7 @@ const WakeGroupScreen = () => {
   const [wakeConfirmMember, setWakeConfirmMember] = useState<WakeGroupMember | null>(null);
   const [wakingReceiverId, setWakingReceiverId] = useState<number | null>(null);
   const wakeInFlightRef = useRef(false);
+  const leaveInFlightRef = useRef(false);
   const [wakeSuccessEvent, setWakeSuccessEvent] = useState<PendingWakeSuccess | null>(null);
   const [acknowledgingSuccess, setAcknowledgingSuccess] = useState(false);
   const wakeSuccessEventRef = useRef<PendingWakeSuccess | null>(null);
@@ -187,6 +188,39 @@ const WakeGroupScreen = () => {
     });
   };
 
+  const leaveGroup = async () => {
+    if (leaveInFlightRef.current) return;
+
+    leaveInFlightRef.current = true;
+    try {
+      await nunnunApi.group.leave(params.groupId);
+      navigation.popTo('Home');
+    } catch {
+      Alert.alert('그룹 탈퇴 실패', '그룹에서 나가지 못했어요.');
+    } finally {
+      leaveInFlightRef.current = false;
+    }
+  };
+
+  const openGroupMenu = () => {
+    Alert.alert(detail?.name ?? '그룹', `초대 코드: ${detail?.invite_code ?? ''}`, [
+      { text: '닫기', style: 'cancel' },
+      {
+        text: '그룹 나가기',
+        style: 'destructive',
+        onPress: () =>
+          Alert.alert('그룹 나가기', '정말 이 그룹에서 나갈까요?', [
+            { text: '취소', style: 'cancel' },
+            {
+              text: '나가기',
+              style: 'destructive',
+              onPress: () => leaveGroup().catch(() => undefined),
+            },
+          ]),
+      },
+    ]);
+  };
+
   if (loading) {
     return <View style={styles.feedback}><ActivityIndicator color={colors.black} /></View>;
   }
@@ -200,19 +234,7 @@ const WakeGroupScreen = () => {
         title={detail.name}
         rightIcon="menu"
         onPressBack={() => navigation.goBack()}
-        onPressRight={() =>
-          Alert.alert(detail.name, `초대 코드: ${detail.invite_code}`, [
-            { text: '닫기', style: 'cancel' },
-            {
-              text: '그룹 관리',
-              onPress: () => navigation.navigate('WaitingForMembers', {
-                groupId: detail.id,
-                groupType: 'wake',
-                groupName: detail.name,
-              }),
-            },
-          ])
-        }
+        onPressRight={openGroupMenu}
       />
       <View style={styles.cardRow}>
         {detail.members.map(member => {

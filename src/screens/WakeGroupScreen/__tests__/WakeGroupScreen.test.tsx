@@ -3,11 +3,13 @@ import { Alert, Image, Text, TouchableOpacity } from 'react-native';
 import ReactTestRenderer, { act } from 'react-test-renderer';
 import { nunnunApi } from '../../../api';
 import type { WakeGroupDetail } from '../../../api/types';
+import NavHeader from '../../../components/NavHeader';
 import WakeGroupScreen from '../index';
 
 const mockNavigation = {
   goBack: jest.fn(),
   navigate: jest.fn(),
+  popTo: jest.fn(),
 };
 const mockRoute = { params: { groupId: 7 } };
 
@@ -28,7 +30,11 @@ jest.mock('react-native-safe-area-context', () => ({
 jest.mock('../../../api', () => ({
   ApiError: class ApiError extends Error {},
   nunnunApi: {
-    group: { detail: jest.fn(), getPendingWakeSuccess: jest.fn() },
+    group: {
+      detail: jest.fn(),
+      getPendingWakeSuccess: jest.fn(),
+      leave: jest.fn(),
+    },
     wake: { wakeMember: jest.fn(), acknowledgeSuccess: jest.fn() },
   },
 }));
@@ -110,6 +116,7 @@ describe('WakeGroupScreen wake confirmation', () => {
     jest.clearAllMocks();
     jest.mocked(nunnunApi.group.detail).mockResolvedValue(detail);
     jest.mocked(nunnunApi.group.getPendingWakeSuccess).mockResolvedValue(null);
+    jest.mocked(nunnunApi.group.leave).mockResolvedValue(undefined);
     jest.mocked(nunnunApi.wake.acknowledgeSuccess).mockResolvedValue(undefined);
     jest.mocked(nunnunApi.wake.wakeMember).mockResolvedValue({
       wake_request_id: 31,
@@ -137,6 +144,41 @@ describe('WakeGroupScreen wake confirmation', () => {
     expect(nunnunApi.wake.wakeMember).not.toHaveBeenCalled();
     expect(texts).toContain('상대 멤버님을 깨울까요?');
     expect(caution).toBeDefined();
+  });
+
+  it('shows invite code and leave instead of group management', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    const renderer = await renderScreen();
+
+    renderer.root.findByType(NavHeader).props.onPressRight();
+
+    const menuButtons = alert.mock.calls[0][2];
+    expect(alert).toHaveBeenCalledWith(
+      detail.name,
+      `초대 코드: ${detail.invite_code}`,
+      expect.any(Array),
+    );
+    expect(menuButtons?.map(button => button.text)).toEqual([
+      '닫기',
+      '그룹 나가기',
+    ]);
+    expect(menuButtons?.some(button => button.text === '그룹 관리')).toBe(false);
+    alert.mockRestore();
+  });
+
+  it('leaves the group after confirmation and returns home', async () => {
+    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
+    const renderer = await renderScreen();
+
+    renderer.root.findByType(NavHeader).props.onPressRight();
+    alert.mock.calls[0][2]?.find(button => button.text === '그룹 나가기')?.onPress?.();
+    await act(async () => {
+      await alert.mock.calls[1][2]?.find(button => button.text === '나가기')?.onPress?.();
+    });
+
+    expect(nunnunApi.group.leave).toHaveBeenCalledWith(7);
+    expect(mockNavigation.popTo).toHaveBeenCalledWith('Home');
+    alert.mockRestore();
   });
 
   it('cancels without calling the wake API', async () => {
