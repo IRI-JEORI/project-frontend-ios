@@ -30,7 +30,7 @@ export const CameraCaptureScreen = ({ navigation, route }: Props) => {
   const [isTakingPhoto, setIsTakingPhoto] = useState(false);
   const { hasPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('front');
-  const photoOutput = usePhotoOutput();
+  const photoOutput = usePhotoOutput({ containerFormat: 'jpeg' });
   const isFocused = useIsFocused();
   const { width: viewportWidth } = useWindowDimensions();
   const contentWidth = Math.min(viewportWidth, MAX_CONTENT_WIDTH);
