@@ -17,7 +17,7 @@ export type RootStackParamList = {
   AddGroupName: { groupType: 'wake' | 'roommate' };
   WaitingForMembers: { groupId: number; groupType: 'wake'; groupName?: string };
   WakeGroupDetail: { groupId: number };
-  WakeAlarm: { memberName: string; onComplete: (photoUri: string) => void };
+  WakeAlarm: { requestId: number };
   WakeNotification: { requestId: number } | undefined;
   SelfWakeVerification: {
     recipientName: string;
