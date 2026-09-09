@@ -23,6 +23,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     window = UIWindow(frame: UIScreen.main.bounds)
 
+#if DEBUG
+    let backendHost = (Bundle.main.object(forInfoDictionaryKey: "LocalBackendHost") as? String)?
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    if let backendHost, !backendHost.isEmpty {
+      UserDefaults.standard.set(backendHost, forKey: "LocalBackendHost")
+    } else {
+      UserDefaults.standard.removeObject(forKey: "LocalBackendHost")
+    }
+#endif
+
     factory.startReactNative(
       withModuleName: "nunnun",
       in: window,

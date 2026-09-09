@@ -2,13 +2,23 @@ import { NativeModules, Platform } from 'react-native';
 
 const DEPLOYED_API_BASE_URL = 'http://1.201.116.185';
 
+const getConfiguredIOSDevelopmentHost = () => {
+  const configuredHost =
+    NativeModules.SettingsManager?.settings?.LocalBackendHost;
+
+  return typeof configuredHost === 'string' && configuredHost.trim()
+    ? configuredHost.trim()
+    : undefined;
+};
+
 const getIOSDevelopmentApiBaseUrl = () => {
   const sourceCode = NativeModules.SourceCode;
   const scriptUrl =
     sourceCode?.getConstants?.().scriptURL ?? sourceCode?.scriptURL;
   const metroHost = scriptUrl?.match(/^https?:\/\/([^/:]+)/)?.[1];
+  const backendHost = getConfiguredIOSDevelopmentHost() ?? metroHost;
 
-  return `http://${metroHost ?? 'localhost'}:8080`;
+  return `http://${backendHost ?? 'localhost'}:8080`;
 };
 
 export const API_BASE_URL =

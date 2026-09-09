@@ -26,8 +26,17 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>LocalBackendHost</key>
+	<string>$(LOCAL_BACKEND_HOST)</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>기상 인증 사진을 촬영하기 위해 카메라를 사용합니다.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>개발 중 Mac에서 실행되는 로컬 서버에 연결하기 위해 로컬 네트워크를 사용합니다.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
