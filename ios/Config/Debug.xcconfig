@@ -1,4 +1,5 @@
 #include "../Pods/Target Support Files/Pods-nunnun/Pods-nunnun.debug.xcconfig"
 
 LOCAL_BACKEND_HOST =
+LOCAL_BACKEND_API_BASE_URL =
 #include? "LocalBackend.local.xcconfig"

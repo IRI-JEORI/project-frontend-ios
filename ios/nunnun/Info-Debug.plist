@@ -26,6 +26,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>LocalBackendAPIBaseURL</key>
+	<string>$(LOCAL_BACKEND_API_BASE_URL)</string>
 	<key>LocalBackendHost</key>
 	<string>$(LOCAL_BACKEND_HOST)</string>
 	<key>NSAppTransportSecurity</key>
