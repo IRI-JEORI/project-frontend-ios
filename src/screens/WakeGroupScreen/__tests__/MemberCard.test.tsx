@@ -4,7 +4,9 @@ import ReactTestRenderer, { act } from 'react-test-renderer';
 import type { WakeGroupMember } from '../../../api/types';
 import {
   canOpenWakeConfirmation,
+  cooldownRemainingMinutes,
   dndActionLabel,
+  memberCardSecondary,
   memberActionLabel,
   memberCardStatus,
 } from '../memberCardState';
@@ -87,6 +89,25 @@ describe('WakeGroup MemberCard states', () => {
     );
     expect(dndActionLabel(null)).toBe('방해금지');
     expect(dndActionLabel('invalid')).toBe('방해금지');
+  });
+
+  it('shows the remaining cooldown next to an awake time', () => {
+    const awakeMember = member({
+      state: 'AWAKE',
+      actual_wake_time: '09:00',
+      can_wake: false,
+      block_reason: 'COOLDOWN',
+      wake_available_at: '2026-08-20T09:30:00+09:00',
+    });
+    const nowMs = new Date('2026-08-20T09:10:01+09:00').getTime();
+
+    expect(
+      cooldownRemainingMinutes(awakeMember.wake_available_at, nowMs),
+    ).toBe(20);
+    expect(memberCardSecondary(awakeMember, nowMs)).toEqual({
+      value: '20분',
+      label: '쿨다운',
+    });
   });
 
   it('disables the DND action without invoking wake', async () => {

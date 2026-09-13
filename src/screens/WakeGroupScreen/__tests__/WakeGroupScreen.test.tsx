@@ -4,6 +4,7 @@ import ReactTestRenderer, { act } from 'react-test-renderer';
 import { nunnunApi } from '../../../api';
 import type { WakeGroupDetail } from '../../../api/types';
 import NavHeader from '../../../components/NavHeader';
+import Clipboard from '@react-native-clipboard/clipboard';
 import WakeGroupScreen from '../index';
 
 const mockNavigation = {
@@ -37,6 +38,11 @@ jest.mock('../../../api', () => ({
     },
     wake: { wakeMember: jest.fn(), acknowledgeSuccess: jest.fn() },
   },
+}));
+
+jest.mock('@react-native-clipboard/clipboard', () => ({
+  __esModule: true,
+  default: { setString: jest.fn() },
 }));
 
 const detail: WakeGroupDetail = {
@@ -146,7 +152,7 @@ describe('WakeGroupScreen wake confirmation', () => {
     expect(caution).toBeDefined();
   });
 
-  it('shows invite code and leave instead of group management', async () => {
+  it('shows and copies the invite code alongside the leave action', async () => {
     const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => undefined);
     const renderer = await renderScreen();
 
@@ -160,10 +166,45 @@ describe('WakeGroupScreen wake confirmation', () => {
     );
     expect(menuButtons?.map(button => button.text)).toEqual([
       '닫기',
+      '초대 코드 복사',
       '그룹 나가기',
     ]);
     expect(menuButtons?.some(button => button.text === '그룹 관리')).toBe(false);
+
+    menuButtons?.find(button => button.text === '초대 코드 복사')?.onPress?.();
+    expect(Clipboard.setString).toHaveBeenCalledWith(detail.invite_code);
+    expect(alert).toHaveBeenLastCalledWith(
+      '복사 완료',
+      '초대 코드가 복사됐어요.',
+    );
     alert.mockRestore();
+  });
+
+  it('shows the wake cooldown beside the verified wake time', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-08-20T09:10:01+09:00'));
+    jest.mocked(nunnunApi.group.detail).mockResolvedValue({
+      ...detail,
+      members: [
+        detail.members[0],
+        {
+          ...detail.members[1],
+          state: 'AWAKE',
+          actual_wake_time: '09:00',
+          proof_image_url: 'https://signed.example/proof.jpg',
+          can_wake: false,
+          block_reason: 'COOLDOWN',
+          wake_available_at: '2026-08-20T09:30:00+09:00',
+        },
+      ],
+    });
+
+    const renderer = await renderScreen();
+    const texts = renderer.root.findAllByType(Text).map(node => node.props.children);
+
+    expect(texts).toContain('09:00');
+    expect(texts).toContain('20분');
+    expect(texts).toContain('쿨다운');
   });
 
   it('leaves the group after confirmation and returns home', async () => {

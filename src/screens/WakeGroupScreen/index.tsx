@@ -12,6 +12,7 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Clipboard from '@react-native-clipboard/clipboard';
 import NavHeader from '../../components/NavHeader';
 import PaginationDots from '../../components/PaginationDots';
 import { RootStackParamList } from '../../navigation/types';
@@ -25,6 +26,7 @@ import type {
 import MemberCard from './components/MemberCard';
 import {
   canOpenWakeConfirmation,
+  memberCardSecondary,
   memberActionLabel,
   memberCardStatus,
 } from './memberCardState';
@@ -40,11 +42,6 @@ const memberPrimary = (member: WakeGroupMember) =>
     ? member.actual_wake_time ? formatTime(member.actual_wake_time) : '--:--'
     : member.target_wake_time ? formatTime(member.target_wake_time) : '--:--';
 
-const memberSecondary = (member: WakeGroupMember) =>
-  member.remaining_to_target
-    ? `${member.remaining_to_target.value}${member.remaining_to_target.unit === 'HOUR' ? '시간' : '분'}`
-    : '--';
-
 const WakeGroupScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'WakeGroupDetail'>>();
@@ -58,6 +55,7 @@ const WakeGroupScreen = () => {
   const leaveInFlightRef = useRef(false);
   const [wakeSuccessEvent, setWakeSuccessEvent] = useState<PendingWakeSuccess | null>(null);
   const [acknowledgingSuccess, setAcknowledgingSuccess] = useState(false);
+  const [currentTimeMs, setCurrentTimeMs] = useState(() => Date.now());
   const wakeSuccessEventRef = useRef<PendingWakeSuccess | null>(null);
   const pendingSuccessInFlightRef = useRef(false);
   const successAckInFlightRef = useRef(false);
@@ -77,6 +75,14 @@ const WakeGroupScreen = () => {
   }, [params.groupId]);
 
   useFocusEffect(useCallback(() => { load().catch(() => undefined); }, [load]));
+
+  useFocusEffect(
+    useCallback(() => {
+      setCurrentTimeMs(Date.now());
+      const interval = setInterval(() => setCurrentTimeMs(Date.now()), 30_000);
+      return () => clearInterval(interval);
+    }, []),
+  );
 
   const checkPendingWakeSuccess = useCallback(async () => {
     if (
@@ -163,6 +169,7 @@ const WakeGroupScreen = () => {
     setAcknowledgingSuccess(true);
     try {
       await nunnunApi.wake.acknowledgeSuccess(event.wake_request_id);
+      await load();
       wakeSuccessEventRef.current = null;
       setWakeSuccessEvent(null);
       if (sendReward) {
@@ -206,6 +213,14 @@ const WakeGroupScreen = () => {
     Alert.alert(detail?.name ?? '그룹', `초대 코드: ${detail?.invite_code ?? ''}`, [
       { text: '닫기', style: 'cancel' },
       {
+        text: '초대 코드 복사',
+        onPress: () => {
+          if (!detail?.invite_code) return;
+          Clipboard.setString(detail.invite_code);
+          Alert.alert('복사 완료', '초대 코드가 복사됐어요.');
+        },
+      },
+      {
         text: '그룹 나가기',
         style: 'destructive',
         onPress: () =>
@@ -239,6 +254,7 @@ const WakeGroupScreen = () => {
       <View style={styles.cardRow}>
         {detail.members.map(member => {
           const awake = member.state === 'AWAKE';
+          const secondary = memberCardSecondary(member, currentTimeMs);
           return (
             <MemberCard
               key={member.user_id}
@@ -246,8 +262,8 @@ const WakeGroupScreen = () => {
               status={memberCardStatus(member)}
               primaryValue={memberPrimary(member)}
               primaryLabel={awake ? '기상 시간' : '기상 목표'}
-              secondaryValue={memberSecondary(member)}
-              secondaryLabel={member.state === 'SLEEPING' ? '취침 중' : member.remaining_to_target ? '목표까지' : member.state}
+              secondaryValue={secondary.value}
+              secondaryLabel={secondary.label}
               actionLabel={memberActionLabel(member)}
               onPressAction={member.is_me ? () => selfVerify(member) : () => openWakeConfirmation(member)}
               photoUri={member.proof_image_url ?? undefined}
