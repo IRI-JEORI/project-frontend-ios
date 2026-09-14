@@ -114,6 +114,29 @@ describe('WakeGroup MemberCard states', () => {
     });
   });
 
+  it('moves the cooldown timer into the action area without a waiting label', async () => {
+    let renderer!: ReactTestRenderer.ReactTestRenderer;
+    await act(() => {
+      renderer = ReactTestRenderer.create(
+        <MemberCard
+          name="임의 멤버"
+          status="done"
+          primaryValue="09:00"
+          primaryLabel="기상 시간"
+          secondaryValue="19:59"
+          secondaryLabel="쿨다운"
+          actionLabel="대기 중"
+        />,
+      );
+    });
+
+    const labels = renderer.root.findAllByType(Text).map(node => node.props.children);
+    expect(labels).toContain('19:59');
+    expect(labels).toContain('쿨다운');
+    expect(labels).not.toContain('대기 중');
+    expect(renderer.root.findByProps({ accessibilityRole: 'timer' })).toBeDefined();
+  });
+
   it('disables the DND action without invoking wake', async () => {
     const onPress = jest.fn();
     const renderer = await renderCard('dnd', '방해금지', onPress);

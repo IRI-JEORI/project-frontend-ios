@@ -32,6 +32,7 @@ const MemberCard = ({
   const isDone = status === 'done';
   const needsHelp = status === 'needsHelp';
   const isDnd = status === 'dnd';
+  const isCooldown = isDone && secondaryLabel === '쿨다운';
   const textColor = needsHelp || isDnd ? colors.white : isDone ? colors.brown : 'rgba(172,172,172,0.85)';
 
   return (
@@ -80,23 +81,36 @@ const MemberCard = ({
               {primaryLabel}
             </Text>
           </View>
-          <View style={styles.statColumn}>
-            <Text style={[styles.statValue, { color: textColor }]}>
-              {secondaryValue}
-            </Text>
-            <Text style={[styles.statLabel, { color: textColor }]}>
-              {secondaryLabel}
-            </Text>
-          </View>
+          {!isCooldown && (
+            <View style={styles.statColumn}>
+              <Text style={[styles.statValue, { color: textColor }]}>
+                {secondaryValue}
+              </Text>
+              <Text style={[styles.statLabel, { color: textColor }]}>
+                {secondaryLabel}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
       <View style={styles.buttonWrapper}>
-        <Button
-          label={actionLabel}
-          size="medium"
-          onPress={isDone || isDnd ? undefined : onPressAction}
-          disabled={isDone || isDnd}
-        />
+        {isCooldown ? (
+          <View
+            accessibilityLabel={`쿨다운 ${secondaryValue}`}
+            accessibilityRole="timer"
+            style={styles.cooldownButton}
+          >
+            <Text style={styles.cooldownLabel}>쿨다운</Text>
+            <Text style={styles.cooldownValue}>{secondaryValue}</Text>
+          </View>
+        ) : (
+          <Button
+            label={actionLabel}
+            size="medium"
+            onPress={isDone || isDnd ? undefined : onPressAction}
+            disabled={isDone || isDnd}
+          />
+        )}
       </View>
     </View>
   );
@@ -202,6 +216,27 @@ const styles = StyleSheet.create({
   },
   buttonWrapper: {
     marginTop: 12,
+  },
+  cooldownButton: {
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: colors.charcoal,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  cooldownLabel: {
+    color: 'rgba(255,255,255,0.68)',
+    fontFamily: 'PretendardSemiBold',
+    fontSize: 10,
+  },
+  cooldownValue: {
+    color: colors.white,
+    fontFamily: 'PretendardBold',
+    fontSize: 15,
+    fontVariant: ['tabular-nums'],
+    letterSpacing: 0.4,
   },
 });
 
