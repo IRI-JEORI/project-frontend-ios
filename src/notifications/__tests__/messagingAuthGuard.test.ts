@@ -1,4 +1,5 @@
 import { Alert, Platform } from 'react-native';
+import { getMessaging } from '@react-native-firebase/messaging';
 import { tokenStorage } from '../../api/tokenStorage';
 import { openWakeNotification } from '../../navigation/rootNavigation';
 import {
@@ -66,6 +67,15 @@ describe('FCM authenticated navigation guard', () => {
       configurable: true,
       value: 'android',
     });
+    jest.mocked(getMessaging).mockReturnValue({} as never);
+  });
+
+  it('does not break app rendering when Firebase is unavailable', () => {
+    jest.mocked(getMessaging).mockImplementation(() => {
+      throw new Error('No Firebase App');
+    });
+
+    expect(() => startForegroundMessaging()).not.toThrow();
   });
 
   it('ignores foreground and opened notifications after logout', async () => {

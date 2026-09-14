@@ -93,45 +93,64 @@ export const registerBackgroundMessageHandler = () => {
 };
 
 export const startForegroundMessaging = () => {
-  const messaging = getMessaging();
-  const unsubscribeTokenRefresh = onTokenRefresh(messaging, token => {
-    registerToken(token).catch(() => undefined);
-  });
+  let messaging: ReturnType<typeof getMessaging>;
+  try {
+    messaging = getMessaging();
+  } catch {
+    // Firebase may not be configured yet in a local iOS build. Push support
+    // should not prevent the rest of the app from rendering.
+    return () => undefined;
+  }
 
-  const unsubscribeForeground = onMessage(messaging, async message => {
-    const params = parseWakeRequestPayload(message.data);
-    if (!params) {
-      return;
-    }
-    if (!(await tokenStorage.getAccessToken())) {
-      return;
-    }
-    notifyWakeDataRefresh({ reason: 'foreground-message' });
-    await WakeAlarm.start(params.requestId);
+  let unsubscribeTokenRefresh: () => void = () => undefined;
+  let unsubscribeForeground: () => void = () => undefined;
+  let unsubscribeOpened: () => void = () => undefined;
 
-    Alert.alert(
-      message.notification?.title ?? '깨우기 요청이 왔어요',
-      message.notification?.body ?? '깨우기 요청을 확인해주세요.',
-      [
-        { text: '나중에', style: 'cancel' },
-        {
-          text: '확인',
-          onPress: () => {
-            openWakeRequest(params.requestId).catch(() => undefined);
+  try {
+    unsubscribeTokenRefresh = onTokenRefresh(messaging, token => {
+      registerToken(token).catch(() => undefined);
+    });
+
+    unsubscribeForeground = onMessage(messaging, async message => {
+      const params = parseWakeRequestPayload(message.data);
+      if (!params) {
+        return;
+      }
+      if (!(await tokenStorage.getAccessToken())) {
+        return;
+      }
+      notifyWakeDataRefresh({ reason: 'foreground-message' });
+      await WakeAlarm.start(params.requestId);
+
+      Alert.alert(
+        message.notification?.title ?? '깨우기 요청이 왔어요',
+        message.notification?.body ?? '깨우기 요청을 확인해주세요.',
+        [
+          { text: '나중에', style: 'cancel' },
+          {
+            text: '확인',
+            onPress: () => {
+              openWakeRequest(params.requestId).catch(() => undefined);
+            },
           },
-        },
-      ],
+        ],
+      );
+    });
+
+    unsubscribeOpened = onNotificationOpenedApp(
+      messaging,
+      openWakeRequestFromMessage,
     );
-  });
 
-  const unsubscribeOpened = onNotificationOpenedApp(
-    messaging,
-    openWakeRequestFromMessage,
-  );
-
-  getInitialNotification(messaging)
-    .then(openWakeRequestFromMessage)
-    .catch(() => undefined);
+    getInitialNotification(messaging)
+      .then(openWakeRequestFromMessage)
+      .catch(() => undefined);
+  } catch {
+    unsubscribeTokenRefresh();
+    unsubscribeForeground();
+    unsubscribeOpened();
+    return () => undefined;
+  }
 
   return () => {
     unsubscribeTokenRefresh();
