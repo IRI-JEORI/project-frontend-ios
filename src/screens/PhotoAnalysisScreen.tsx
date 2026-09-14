@@ -16,6 +16,7 @@ import { getDemoPoseAnalysisResult } from '../utils/analyzePose';
 import { nunnunApi } from '../api';
 import { proofErrorMessage } from '../utils/wakeProofError';
 import { WakeAlarm } from '../wakeAlarm/WakeAlarm';
+import { notifyWakeDataRefresh } from '../events/wakeDataRefresh';
 
 const DESIGN_WIDTH = 402;
 const MAX_CONTENT_WIDTH = 430;
@@ -43,6 +44,10 @@ export const PhotoAnalysisScreen = ({ navigation, route }: Props) => {
       nunnunApi.wake
         .uploadProof(route.params.requestId, route.params.photoUri)
         .then(async proofResult => {
+          notifyWakeDataRefresh({
+            reason: 'proof-uploaded',
+            groupId: route.params.groupId,
+          });
           if (
             route.params.verificationMode === 'wake-proof' &&
             (proofResult.pose_match_result === 'SUCCESS' || !proofResult.can_retry)

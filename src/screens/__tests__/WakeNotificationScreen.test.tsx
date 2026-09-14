@@ -5,6 +5,11 @@ import { nunnunApi, type WakeRequest } from '../../api';
 import { WakeNotificationScreen } from '../WakeNotificationScreen';
 import { WakeAlarm } from '../../wakeAlarm/WakeAlarm';
 
+jest.mock('@react-navigation/native', () => ({
+  useFocusEffect: (callback: () => void) =>
+    require('react').useEffect(callback, [callback]),
+}));
+
 jest.mock('../../api', () => ({
   ApiError: class ApiError extends Error {},
   nunnunApi: {

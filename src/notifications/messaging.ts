@@ -20,6 +20,7 @@ import { tokenStorage } from '../api/tokenStorage';
 import { openWakeNotification } from '../navigation/rootNavigation';
 import { parseWakeRequestPayload } from './wakeRequestPayload';
 import { WakeAlarm } from '../wakeAlarm/WakeAlarm';
+import { notifyWakeDataRefresh } from '../events/wakeDataRefresh';
 
 const notificationPermissionGranted = async () => {
   if (Platform.OS !== 'android') {
@@ -92,10 +93,6 @@ export const registerBackgroundMessageHandler = () => {
 };
 
 export const startForegroundMessaging = () => {
-  if (Platform.OS !== 'android') {
-    return () => undefined;
-  }
-
   const messaging = getMessaging();
   const unsubscribeTokenRefresh = onTokenRefresh(messaging, token => {
     registerToken(token).catch(() => undefined);
@@ -109,6 +106,7 @@ export const startForegroundMessaging = () => {
     if (!(await tokenStorage.getAccessToken())) {
       return;
     }
+    notifyWakeDataRefresh({ reason: 'foreground-message' });
     await WakeAlarm.start(params.requestId);
 
     Alert.alert(

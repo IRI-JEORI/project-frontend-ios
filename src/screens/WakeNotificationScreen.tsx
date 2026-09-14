@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { RootStackParamList } from '../../App';
 import { Colors } from '../constants/Colors';
@@ -20,6 +21,7 @@ import { ApiError, nunnunApi, type WakeRequest } from '../api';
 import { createWakeProofCompletionState } from '../navigation/selfVerifyNavigation';
 import { poseImageForCode } from '../utils/poseImage';
 import { WakeAlarm } from '../wakeAlarm/WakeAlarm';
+import { subscribeWakeDataRefresh } from '../events/wakeDataRefresh';
 
 const DESIGN_WIDTH = 402;
 const MAX_CONTENT_WIDTH = 430;
@@ -64,12 +66,12 @@ export const WakeNotificationScreen = ({ navigation, route }: Props) => {
   const contentWidth = Math.min(viewportWidth, MAX_CONTENT_WIDTH);
   const scale = Math.min(contentWidth / DESIGN_WIDTH, 1);
 
-  useEffect(() => {
+  const loadRequest = useCallback(() => {
     if (requestId === undefined) {
       setWakeRequest(null);
       setLoading(false);
       setErrorMessage(null);
-      return;
+      return () => undefined;
     }
 
     let active = true;
@@ -102,6 +104,24 @@ export const WakeNotificationScreen = ({ navigation, route }: Props) => {
       active = false;
     };
   }, [navigation, requestId]);
+
+  useFocusEffect(loadRequest);
+
+  useEffect(
+    () => {
+      let cancelRefresh: () => void = () => undefined;
+      const unsubscribe = subscribeWakeDataRefresh(() => {
+        cancelRefresh();
+        cancelRefresh = loadRequest();
+      });
+
+      return () => {
+        cancelRefresh();
+        unsubscribe();
+      };
+    },
+    [loadRequest],
+  );
 
   const declineRequest = () => {
     if (!wakeRequest || declineInFlight.current) {

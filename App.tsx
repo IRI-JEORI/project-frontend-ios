@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -38,6 +39,7 @@ import {
   startForegroundMessaging,
 } from './src/notifications/messaging';
 import { listenForWakeAlarmNavigation } from './src/wakeAlarm/WakeAlarm';
+import { notifyWakeDataRefresh } from './src/events/wakeDataRefresh';
 
 export type RootStackParamList = {
   Splash: undefined;
@@ -130,6 +132,8 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
+  const appStateRef = useRef(AppState.currentState);
+
   useEffect(() => {
     const stopMessaging = startForegroundMessaging();
     const stopAlarmNavigation = listenForWakeAlarmNavigation(requestId => {
@@ -139,6 +143,18 @@ export default function App() {
       stopMessaging();
       stopAlarmNavigation();
     };
+  }, []);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextState => {
+      const wasInactive = /inactive|background/.test(appStateRef.current);
+      appStateRef.current = nextState;
+      if (wasInactive && nextState === 'active') {
+        notifyWakeDataRefresh({ reason: 'app-active' });
+      }
+    });
+
+    return () => subscription.remove();
   }, []);
 
   return (

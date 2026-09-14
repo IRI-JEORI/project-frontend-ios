@@ -6,6 +6,7 @@ import {
   startForegroundMessaging,
 } from '../messaging';
 import { WakeAlarm } from '../../wakeAlarm/WakeAlarm';
+import { notifyWakeDataRefresh } from '../../events/wakeDataRefresh';
 
 let mockForegroundHandler: ((message: unknown) => Promise<void>) | undefined;
 let mockOpenedHandler: ((message: unknown) => Promise<void>) | undefined;
@@ -43,6 +44,9 @@ jest.mock('../../wakeAlarm/WakeAlarm', () => ({
 
 jest.mock('../../navigation/rootNavigation', () => ({
   openWakeNotification: jest.fn(),
+}));
+jest.mock('../../events/wakeDataRefresh', () => ({
+  notifyWakeDataRefresh: jest.fn(),
 }));
 
 const wakeMessage = {
@@ -106,6 +110,9 @@ describe('FCM authenticated navigation guard', () => {
     await mockForegroundHandler?.(wakeMessage);
     await mockBackgroundHandler?.(wakeMessage);
 
+    expect(notifyWakeDataRefresh).toHaveBeenCalledWith({
+      reason: 'foreground-message',
+    });
     expect(WakeAlarm.start).toHaveBeenNthCalledWith(1, 42);
     expect(WakeAlarm.start).toHaveBeenNthCalledWith(2, 42);
   });

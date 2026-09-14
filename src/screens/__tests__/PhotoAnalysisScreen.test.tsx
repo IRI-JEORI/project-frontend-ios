@@ -6,6 +6,7 @@ import { nunnunApi } from '../../api';
 import { getDemoPoseAnalysisResult } from '../../utils/analyzePose';
 import { PhotoAnalysisScreen } from '../PhotoAnalysisScreen';
 import { WakeAlarm } from '../../wakeAlarm/WakeAlarm';
+import { notifyWakeDataRefresh } from '../../events/wakeDataRefresh';
 
 jest.mock('../../api', () => ({
   ApiError: class ApiError extends Error {},
@@ -16,6 +17,9 @@ jest.mock('../../utils/analyzePose', () => ({
 }));
 jest.mock('../../wakeAlarm/WakeAlarm', () => ({
   WakeAlarm: { start: jest.fn(), stop: jest.fn() },
+}));
+jest.mock('../../events/wakeDataRefresh', () => ({
+  notifyWakeDataRefresh: jest.fn(),
 }));
 
 const realParams: RootStackParamList['PhotoAnalysis'] = {
@@ -75,6 +79,10 @@ describe('PhotoAnalysisScreen', () => {
 
     expect(nunnunApi.wake.uploadProof).toHaveBeenCalledTimes(1);
     expect(nunnunApi.wake.uploadProof).toHaveBeenCalledWith(31, 'file:///cache/photo.jpg');
+    expect(notifyWakeDataRefresh).toHaveBeenCalledWith({
+      reason: 'proof-uploaded',
+      groupId: 17,
+    });
     expect(getDemoPoseAnalysisResult).not.toHaveBeenCalled();
     expect(navigation.replace).toHaveBeenCalledWith(
       'PhotoAnalysisSuccess',

@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -45,6 +45,7 @@ import {
 } from '../constants/DemoUser';
 import MemberStatusLightGray from '../assets/images/member-status-light-gray.svg';
 import MemberStatusWhite from '../assets/images/member-status-white.svg';
+import { subscribeWakeDataRefresh } from '../events/wakeDataRefresh';
 
 const DESIGN_WIDTH = 390;
 const MAX_CONTENT_WIDTH = 430;
@@ -84,53 +85,50 @@ export const WaitingForMembersScreen = ({ navigation, route }: Props) => {
   const insets = useSafeAreaInsets();
   const contentWidth = Math.min(viewportWidth, MAX_CONTENT_WIDTH);
   const scale = Math.min(contentWidth / DESIGN_WIDTH, 1);
+
+  const loadGroupDetail = useCallback(async () => {
+    if (groupId === undefined) {
+      return;
+    }
+
+    setGroupDetailLoading(true);
+    setGroupDetailError(null);
+    try {
+      setGroupDetail(await nunnunApi.group.detail(groupId));
+    } catch (error) {
+      setGroupDetail(null);
+      if (error instanceof ApiError) {
+        if (error.status === 401) {
+          setGroupDetailError('데모 사용자를 다시 선택해주세요.');
+        } else if (error.status === 403) {
+          setGroupDetailError('이 그룹을 볼 권한이 없어요.');
+        } else if (error.status === 404) {
+          setGroupDetailError('존재하지 않는 그룹이에요.');
+        } else {
+          setGroupDetailError('그룹 정보를 불러오지 못했어요.');
+        }
+      } else {
+        setGroupDetailError('그룹 정보를 불러오지 못했어요.');
+      }
+    } finally {
+      setGroupDetailLoading(false);
+    }
+  }, [groupId]);
+
   useFocusEffect(
     useCallback(() => {
-      if (groupId === undefined) {
-        return undefined;
-      }
+      loadGroupDetail().catch(() => undefined);
+    }, [loadGroupDetail]),
+  );
 
-      let isActive = true;
-      setGroupDetailLoading(true);
-      setGroupDetailError(null);
-
-      nunnunApi.group
-        .detail(groupId)
-        .then(detail => {
-          if (isActive) {
-            setGroupDetail(detail);
-          }
-        })
-        .catch(error => {
-          if (!isActive) {
-            return;
-          }
-
-          setGroupDetail(null);
-          if (error instanceof ApiError) {
-            if (error.status === 401) {
-              setGroupDetailError('데모 사용자를 다시 선택해주세요.');
-            } else if (error.status === 403) {
-              setGroupDetailError('이 그룹을 볼 권한이 없어요.');
-            } else if (error.status === 404) {
-              setGroupDetailError('존재하지 않는 그룹이에요.');
-            } else {
-              setGroupDetailError('그룹 정보를 불러오지 못했어요.');
-            }
-          } else {
-            setGroupDetailError('그룹 정보를 불러오지 못했어요.');
-          }
-        })
-        .finally(() => {
-          if (isActive) {
-            setGroupDetailLoading(false);
-          }
-        });
-
-      return () => {
-        isActive = false;
-      };
-    }, [groupId]),
+  useEffect(
+    () =>
+      subscribeWakeDataRefresh(event => {
+        if (event.groupId === undefined || event.groupId === groupId) {
+          loadGroupDetail().catch(() => undefined);
+        }
+      }),
+    [groupId, loadGroupDetail],
   );
 
   useFocusEffect(

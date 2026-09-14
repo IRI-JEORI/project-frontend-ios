@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -31,6 +31,7 @@ import {
   memberCardStatus,
 } from './memberCardState';
 import { formatTime } from '../../utils/time';
+import { subscribeWakeDataRefresh } from '../../events/wakeDataRefresh';
 
 const CARD_ROW_TOP_SPACING = 80;
 const CARD_ROW_HORIZONTAL_MARGIN = 26;
@@ -105,6 +106,18 @@ const WakeGroupScreen = () => {
       pendingSuccessInFlightRef.current = false;
     }
   }, [params.groupId]);
+
+  useEffect(
+    () =>
+      subscribeWakeDataRefresh(event => {
+        if (event.groupId !== undefined && event.groupId !== params.groupId) {
+          return;
+        }
+        load().catch(() => undefined);
+        checkPendingWakeSuccess().catch(() => undefined);
+      }),
+    [checkPendingWakeSuccess, load, params.groupId],
+  );
 
   useFocusEffect(
     useCallback(() => {
