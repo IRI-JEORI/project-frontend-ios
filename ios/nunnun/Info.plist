@@ -26,6 +26,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>APIBaseURL</key>
+	<string>$(API_BASE_URL)</string>
 	<key>NSCameraUsageDescription</key>
 	<string>기상 인증 사진을 촬영하기 위해 카메라를 사용합니다.</string>
 	<key>RCTNewArchEnabled</key>

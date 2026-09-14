@@ -23,6 +23,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     window = UIWindow(frame: UIScreen.main.bounds)
 
+    let apiBaseURL = (Bundle.main.object(forInfoDictionaryKey: "APIBaseURL") as? String)?
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+    if let apiBaseURL, !apiBaseURL.isEmpty {
+      UserDefaults.standard.set(apiBaseURL, forKey: "APIBaseURL")
+    } else {
+      UserDefaults.standard.removeObject(forKey: "APIBaseURL")
+    }
+
 #if DEBUG
     for key in ["LocalBackendAPIBaseURL", "LocalBackendHost"] {
       let value = (Bundle.main.object(forInfoDictionaryKey: key) as? String)?

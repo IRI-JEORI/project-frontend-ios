@@ -12,6 +12,7 @@ import { useIsFocused } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import {
   Camera,
+  CommonResolutions,
   useCameraDevice,
   useCameraPermission,
   usePhotoOutput,
@@ -30,7 +31,11 @@ export const CameraCaptureScreen = ({ navigation, route }: Props) => {
   const [isTakingPhoto, setIsTakingPhoto] = useState(false);
   const { hasPermission, requestPermission } = useCameraPermission();
   const device = useCameraDevice('front');
-  const photoOutput = usePhotoOutput({ containerFormat: 'jpeg' });
+  const photoOutput = usePhotoOutput({
+    containerFormat: 'jpeg',
+    quality: 0.8,
+    targetResolution: CommonResolutions.FHD_4_3,
+  });
   const isFocused = useIsFocused();
   const { width: viewportWidth } = useWindowDimensions();
   const contentWidth = Math.min(viewportWidth, MAX_CONTENT_WIDTH);
