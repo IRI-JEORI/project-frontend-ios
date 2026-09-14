@@ -2,12 +2,19 @@ import { NativeModules, Platform } from 'react-native';
 
 const FALLBACK_DEPLOYED_API_BASE_URL = 'http://1.201.116.185';
 
+const normalizeHttpBaseUrl = (value: unknown) =>
+  typeof value === 'string' && /^https?:\/\//.test(value.trim())
+    ? value.trim().replace(/\/+$/, '')
+    : undefined;
+
+const getNativeIOSApiBaseUrl = () =>
+  normalizeHttpBaseUrl(NativeModules.APIConfig?.apiBaseURL);
+
 const getConfiguredAPIBaseUrl = () => {
   const configuredBaseUrl = NativeModules.SettingsManager?.settings?.APIBaseURL;
 
-  return typeof configuredBaseUrl === 'string' &&
-    /^https:\/\//.test(configuredBaseUrl.trim())
-    ? configuredBaseUrl.trim().replace(/\/+$/, '')
+  return normalizeHttpBaseUrl(configuredBaseUrl)?.startsWith('https://')
+    ? normalizeHttpBaseUrl(configuredBaseUrl)
     : undefined;
 };
 
@@ -15,10 +22,7 @@ const getConfiguredIOSDevelopmentBaseUrl = () => {
   const configuredBaseUrl =
     NativeModules.SettingsManager?.settings?.LocalBackendAPIBaseURL;
 
-  return typeof configuredBaseUrl === 'string' &&
-    /^https?:\/\//.test(configuredBaseUrl.trim())
-    ? configuredBaseUrl.trim().replace(/\/+$/, '')
-    : undefined;
+  return normalizeHttpBaseUrl(configuredBaseUrl);
 };
 
 const getConfiguredIOSDevelopmentHost = () => {
@@ -31,7 +35,8 @@ const getConfiguredIOSDevelopmentHost = () => {
 };
 
 const getIOSDevelopmentApiBaseUrl = () => {
-  const configuredBaseUrl = getConfiguredIOSDevelopmentBaseUrl();
+  const configuredBaseUrl =
+    getNativeIOSApiBaseUrl() ?? getConfiguredIOSDevelopmentBaseUrl();
   if (configuredBaseUrl) {
     return configuredBaseUrl;
   }
@@ -49,8 +54,14 @@ export const API_BASE_URL =
   __DEV__ && Platform.OS === 'ios'
     ? getIOSDevelopmentApiBaseUrl()
     : Platform.OS === 'ios'
-    ? getConfiguredAPIBaseUrl() ?? FALLBACK_DEPLOYED_API_BASE_URL
+    ? getNativeIOSApiBaseUrl() ??
+      getConfiguredAPIBaseUrl() ??
+      FALLBACK_DEPLOYED_API_BASE_URL
     : FALLBACK_DEPLOYED_API_BASE_URL;
+
+if (__DEV__) {
+  console.info(`[API] Base URL: ${API_BASE_URL}`);
+}
 
 export const API_TIMEOUT_MS = 15_000;
 export const UPLOAD_TIMEOUT_MS = 60_000;

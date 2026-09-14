@@ -10,6 +10,7 @@
 		0C80B921A6F3F58F76C31292 /* libPods-nunnun.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-nunnun.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
+		A71D30E52E71A00100C0D3E1 /* APIConfig.m in Sources */ = {isa = PBXBuildFile; fileRef = A71D30E42E71A00100C0D3E1 /* APIConfig.m */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		9420CF355D28EB15359A6244 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
@@ -22,6 +23,7 @@
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = nunnun/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A71D30E22E71A00100C0D3E1 /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Config/Debug.xcconfig; sourceTree = "<group>"; };
 		A71D30E32E71A00100C0D3E1 /* Release.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Config/Release.xcconfig; sourceTree = "<group>"; };
+		A71D30E42E71A00100C0D3E1 /* APIConfig.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = APIConfig.m; path = nunnun/APIConfig.m; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-nunnun.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-nunnun.debug.xcconfig"; path = "Target Support Files/Pods-nunnun/Pods-nunnun.debug.xcconfig"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-nunnun.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-nunnun.release.xcconfig"; path = "Target Support Files/Pods-nunnun/Pods-nunnun.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-nunnun.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-nunnun.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -46,6 +48,7 @@
 			isa = PBXGroup;
 			children = (
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
+				A71D30E42E71A00100C0D3E1 /* APIConfig.m */,
 				761780EC2CA45674006654EE /* AppDelegate.swift */,
 				A71D30E12E71A00100C0D3E1 /* Info-Debug.plist */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
@@ -266,6 +269,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A71D30E52E71A00100C0D3E1 /* APIConfig.m in Sources */,
 				761780ED2CA45674006654EE /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

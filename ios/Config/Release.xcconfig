@@ -3,4 +3,4 @@
 // Cloudflare Quick Tunnel URLs change when the backend restarts.
 // Update only this value before creating a Release/TestFlight build.
 // $() preserves the double slash because // starts a comment in xcconfig files.
-API_BASE_URL = https:/$()/decrease-provinces-graduate-disciplines.trycloudflare.com
+API_BASE_URL = https:/$()/tennis-established-jews-jefferson.trycloudflare.com
