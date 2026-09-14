@@ -28,18 +28,36 @@ export const cooldownRemainingMinutes = (
   return Math.max(0, Math.ceil((availableAtMs - nowMs) / 60_000));
 };
 
+export const cooldownRemainingSeconds = (
+  wakeAvailableAt: string | null,
+  nowMs = Date.now(),
+) => {
+  if (!wakeAvailableAt) return null;
+
+  const availableAtMs = new Date(wakeAvailableAt).getTime();
+  if (Number.isNaN(availableAtMs)) return null;
+
+  return Math.max(0, Math.ceil((availableAtMs - nowMs) / 1000));
+};
+
+const formatCooldown = (remainingSeconds: number) => {
+  const minutes = Math.floor(remainingSeconds / 60);
+  const seconds = remainingSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+};
+
 export const memberCardSecondary = (
   member: WakeGroupMember,
   nowMs = Date.now(),
 ) => {
   if (member.state === 'AWAKE' && member.block_reason === 'COOLDOWN') {
-    const remainingMinutes = cooldownRemainingMinutes(
+    const remainingSeconds = cooldownRemainingSeconds(
       member.wake_available_at,
       nowMs,
     );
 
     return {
-      value: remainingMinutes === null ? '--' : `${remainingMinutes}분`,
+      value: remainingSeconds === null ? '--' : formatCooldown(remainingSeconds),
       label: '쿨다운',
     };
   }

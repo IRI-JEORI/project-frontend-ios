@@ -5,6 +5,7 @@ import type { WakeGroupMember } from '../../../api/types';
 import {
   canOpenWakeConfirmation,
   cooldownRemainingMinutes,
+  cooldownRemainingSeconds,
   dndActionLabel,
   memberCardSecondary,
   memberActionLabel,
@@ -104,8 +105,11 @@ describe('WakeGroup MemberCard states', () => {
     expect(
       cooldownRemainingMinutes(awakeMember.wake_available_at, nowMs),
     ).toBe(20);
+    expect(
+      cooldownRemainingSeconds(awakeMember.wake_available_at, nowMs),
+    ).toBe(1199);
     expect(memberCardSecondary(awakeMember, nowMs)).toEqual({
-      value: '20분',
+      value: '19:59',
       label: '쿨다운',
     });
   });

@@ -238,7 +238,7 @@ describe('WakeGroupScreen wake confirmation', () => {
     const texts = renderer.root.findAllByType(Text).map(node => node.props.children);
 
     expect(texts).toContain('09:00');
-    expect(texts).toContain('20분');
+    expect(texts).toContain('19:59');
     expect(texts).toContain('쿨다운');
   });
 

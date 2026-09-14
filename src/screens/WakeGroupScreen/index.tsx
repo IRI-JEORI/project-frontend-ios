@@ -92,7 +92,7 @@ const WakeGroupScreen = () => {
   useFocusEffect(
     useCallback(() => {
       setCurrentTimeMs(Date.now());
-      const interval = setInterval(() => setCurrentTimeMs(Date.now()), 30_000);
+      const interval = setInterval(() => setCurrentTimeMs(Date.now()), 1000);
       return () => clearInterval(interval);
     }, []),
   );
