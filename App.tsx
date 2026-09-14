@@ -36,6 +36,7 @@ import {
 } from './src/navigation/rootNavigation';
 import {
   openWakeRequest,
+  registerDeviceAfterLogin,
   startForegroundMessaging,
 } from './src/notifications/messaging';
 import { listenForWakeAlarmNavigation } from './src/wakeAlarm/WakeAlarm';
@@ -136,6 +137,7 @@ export default function App() {
 
   useEffect(() => {
     const stopMessaging = startForegroundMessaging();
+    registerDeviceAfterLogin().catch(() => undefined);
     const stopAlarmNavigation = listenForWakeAlarmNavigation(requestId => {
       openWakeRequest(requestId).catch(() => undefined);
     });

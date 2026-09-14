@@ -22,6 +22,13 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 
 jest.mock('@react-native-firebase/messaging', () => ({
   getMessaging: jest.fn(() => ({})),
+  AuthorizationStatus: {
+    NOT_DETERMINED: -1,
+    DENIED: 0,
+    AUTHORIZED: 1,
+    PROVISIONAL: 2,
+    EPHEMERAL: 3,
+  },
   getInitialNotification: jest.fn(() => Promise.resolve(mockInitialMessage)),
   onMessage: jest.fn((_messaging, handler) => {
     mockForegroundHandler = handler;
@@ -34,6 +41,7 @@ jest.mock('@react-native-firebase/messaging', () => ({
   onTokenRefresh: jest.fn(() => jest.fn()),
   getToken: jest.fn(),
   registerDeviceForRemoteMessages: jest.fn(),
+  requestPermission: jest.fn(() => Promise.resolve(1)),
   setBackgroundMessageHandler: jest.fn((_messaging, handler) => {
     mockBackgroundHandler = handler;
   }),

@@ -6,6 +6,7 @@ import type { WakeGroupDetail } from '../../../api/types';
 import NavHeader from '../../../components/NavHeader';
 import Clipboard from '@react-native-clipboard/clipboard';
 import WakeGroupScreen from '../index';
+import { openWakeRequest } from '../../../notifications/messaging';
 
 const mockNavigation = {
   goBack: jest.fn(),
@@ -36,8 +37,16 @@ jest.mock('../../../api', () => ({
       getPendingWakeSuccess: jest.fn(),
       leave: jest.fn(),
     },
-    wake: { wakeMember: jest.fn(), acknowledgeSuccess: jest.fn() },
+    wake: {
+      wakeMember: jest.fn(),
+      acknowledgeSuccess: jest.fn(),
+      getPendingRequest: jest.fn(),
+    },
   },
+}));
+
+jest.mock('../../../notifications/messaging', () => ({
+  openWakeRequest: jest.fn(),
 }));
 
 jest.mock('@react-native-clipboard/clipboard', () => ({
@@ -129,6 +138,8 @@ describe('WakeGroupScreen wake confirmation', () => {
       status: 'SENT',
       requested_at: '2026-08-20T09:00:00+09:00',
     });
+    jest.mocked(nunnunApi.wake.getPendingRequest).mockResolvedValue(null);
+    jest.mocked(openWakeRequest).mockResolvedValue(undefined);
   });
 
   afterEach(async () => {
@@ -150,6 +161,30 @@ describe('WakeGroupScreen wake confirmation', () => {
     expect(nunnunApi.wake.wakeMember).not.toHaveBeenCalled();
     expect(texts).toContain('상대 멤버님을 깨울까요?');
     expect(caution).toBeDefined();
+  });
+
+  it('opens a newly detected wake request only once while focused', async () => {
+    jest.useFakeTimers();
+    jest.mocked(nunnunApi.wake.getPendingRequest).mockResolvedValue({
+      id: 901,
+      group_id: 7,
+      status: 'SENT',
+      sender: { id: 22, nickname: '상대 멤버' },
+      receiver: { id: 11, nickname: '나' },
+      requested_at: '2026-08-20T09:00:00+09:00',
+      pose: { date: '2026-08-20', code: 'HEART', description: '하트' },
+      attempts_used: 0,
+      remaining_attempts: 2,
+    });
+
+    await renderScreen();
+    await act(async () => {
+      jest.advanceTimersByTime(3000);
+      await Promise.resolve();
+    });
+
+    expect(openWakeRequest).toHaveBeenCalledTimes(1);
+    expect(openWakeRequest).toHaveBeenCalledWith(901);
   });
 
   it('shows and copies the invite code alongside the leave action', async () => {

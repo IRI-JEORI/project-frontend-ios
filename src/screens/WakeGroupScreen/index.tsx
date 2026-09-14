@@ -31,12 +31,17 @@ import {
   memberCardStatus,
 } from './memberCardState';
 import { formatTime } from '../../utils/time';
-import { subscribeWakeDataRefresh } from '../../events/wakeDataRefresh';
+import {
+  claimWakeRequestPresentation,
+  subscribeWakeDataRefresh,
+} from '../../events/wakeDataRefresh';
+import { openWakeRequest } from '../../notifications/messaging';
 
 const CARD_ROW_TOP_SPACING = 80;
 const CARD_ROW_HORIZONTAL_MARGIN = 26;
 const DOTS_TOP_SPACING = 40;
 const WAKE_SUCCESS_POLL_INTERVAL_MS = 4000;
+const PENDING_WAKE_REQUEST_POLL_INTERVAL_MS = 1000;
 
 const memberPrimary = (member: WakeGroupMember) =>
   member.state === 'AWAKE'
@@ -59,19 +64,26 @@ const WakeGroupScreen = () => {
   const [currentTimeMs, setCurrentTimeMs] = useState(() => Date.now());
   const wakeSuccessEventRef = useRef<PendingWakeSuccess | null>(null);
   const pendingSuccessInFlightRef = useRef(false);
+  const pendingRequestInFlightRef = useRef(false);
   const successAckInFlightRef = useRef(false);
   const screenFocusedRef = useRef(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setErrorMessage(null);
+  const load = useCallback(async (showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
+      setErrorMessage(null);
+    }
     try {
       setDetail(await nunnunApi.group.detail(params.groupId));
     } catch {
-      setDetail(null);
-      setErrorMessage('그룹 정보를 불러오지 못했어요.');
+      if (showLoading) {
+        setDetail(null);
+        setErrorMessage('그룹 정보를 불러오지 못했어요.');
+      }
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }, [params.groupId]);
 
@@ -107,16 +119,39 @@ const WakeGroupScreen = () => {
     }
   }, [params.groupId]);
 
+  const checkPendingWakeRequest = useCallback(async () => {
+    if (pendingRequestInFlightRef.current || !screenFocusedRef.current) {
+      return;
+    }
+
+    pendingRequestInFlightRef.current = true;
+    try {
+      const request = await nunnunApi.wake.getPendingRequest();
+      if (
+        screenFocusedRef.current &&
+        request &&
+        claimWakeRequestPresentation(request.id)
+      ) {
+        await openWakeRequest(request.id);
+      }
+    } catch {
+      // Short polling is best-effort; focus and lifecycle refetch remain fallback.
+    } finally {
+      pendingRequestInFlightRef.current = false;
+    }
+  }, []);
+
   useEffect(
     () =>
       subscribeWakeDataRefresh(event => {
         if (event.groupId !== undefined && event.groupId !== params.groupId) {
           return;
         }
-        load().catch(() => undefined);
+        load(false).catch(() => undefined);
         checkPendingWakeSuccess().catch(() => undefined);
+        checkPendingWakeRequest().catch(() => undefined);
       }),
-    [checkPendingWakeSuccess, load, params.groupId],
+    [checkPendingWakeRequest, checkPendingWakeSuccess, load, params.groupId],
   );
 
   useFocusEffect(
@@ -124,13 +159,25 @@ const WakeGroupScreen = () => {
       screenFocusedRef.current = true;
       checkPendingWakeSuccess().catch(() => undefined);
       const interval = setInterval(() => {
+        load(false).catch(() => undefined);
         checkPendingWakeSuccess().catch(() => undefined);
       }, WAKE_SUCCESS_POLL_INTERVAL_MS);
       return () => {
         screenFocusedRef.current = false;
         clearInterval(interval);
       };
-    }, [checkPendingWakeSuccess]),
+    }, [checkPendingWakeSuccess, load]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      checkPendingWakeRequest().catch(() => undefined);
+      const interval = setInterval(() => {
+        checkPendingWakeRequest().catch(() => undefined);
+      }, PENDING_WAKE_REQUEST_POLL_INTERVAL_MS);
+
+      return () => clearInterval(interval);
+    }, [checkPendingWakeRequest]),
   );
 
   const wake = async (member: WakeGroupMember) => {

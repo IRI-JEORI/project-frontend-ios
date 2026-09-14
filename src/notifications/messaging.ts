@@ -5,6 +5,7 @@ import {
   type PermissionStatus,
 } from 'react-native';
 import {
+  AuthorizationStatus,
   getInitialNotification,
   getMessaging,
   getToken,
@@ -12,6 +13,7 @@ import {
   onNotificationOpenedApp,
   onTokenRefresh,
   registerDeviceForRemoteMessages,
+  requestPermission,
   setBackgroundMessageHandler,
   type RemoteMessage,
 } from '@react-native-firebase/messaging';
@@ -23,6 +25,14 @@ import { WakeAlarm } from '../wakeAlarm/WakeAlarm';
 import { notifyWakeDataRefresh } from '../events/wakeDataRefresh';
 
 const notificationPermissionGranted = async () => {
+  if (Platform.OS === 'ios') {
+    const status = await requestPermission(getMessaging());
+    return (
+      status === AuthorizationStatus.AUTHORIZED ||
+      status === AuthorizationStatus.PROVISIONAL
+    );
+  }
+
   if (Platform.OS !== 'android') {
     return false;
   }
